@@ -27,14 +27,22 @@ struct Paddle
 
     void Draw()
     {
-        DrawRectangle
+        DrawRectangleRec
         (
-            x - (width / 2),
-            y - (width / 2),
-            width,
-            height,
+            GetRect(),
             WHITE
         );
+    }
+
+    Rectangle GetRect()
+    {
+        return Rectangle
+        { 
+            x - (width / 2), 
+            y - (height / 2), 
+            10, 
+            100
+        };
     }
 };
 
@@ -44,6 +52,7 @@ int main(){
     const int PADDLE_SIZE   = 100;
     const int CIRCLE_SIZE   = 5;
     const int INITIAL_BALL_SPEED = 200;
+    const char* winnerText = nullptr;
 
     InitWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Pong");
     SetWindowState(FLAG_VSYNC_HINT);
@@ -81,12 +90,88 @@ int main(){
             ball.speedY *= -1;
         }
 
+        if (IsKeyDown(KEY_W))
+        {
+            leftPaddle.y -= leftPaddle.speed * GetFrameTime();
+        }
+
+        if (IsKeyDown(KEY_S))
+        {
+            leftPaddle.y += leftPaddle.speed * GetFrameTime();
+        }
+
+        if (IsKeyDown(KEY_UP))
+        {
+            rightPaddle.y -= rightPaddle.speed * GetFrameTime();
+        }
+
+        if (IsKeyDown(KEY_DOWN))
+        {
+            rightPaddle.y += rightPaddle.speed * GetFrameTime();
+        }
+
+        if (CheckCollisionCircleRec(
+                Vector2{ball.x, ball.y},
+                ball.radius,
+                leftPaddle.GetRect()))
+            {
+                if (ball.speedX < 0)
+                {
+                    ball.speedX *= -1.1f;
+                    ball.speedY = (ball.y - leftPaddle.y) /
+                                  (leftPaddle.height / 2) *
+                                  ball.speedX;
+                }
+            }
+
+        if (CheckCollisionCircleRec(
+                Vector2{ball.x, ball.y},
+                ball.radius,
+                rightPaddle.GetRect()))
+            {   
+                if (ball.speedX > 0)
+                {
+                    ball.speedX *= -1.1f;
+                    ball.speedY = (ball.y - rightPaddle.y) /
+                                  (rightPaddle.height / 2) *
+                                  -ball.speedX;
+                }
+            }
+
+        if (ball.x < 0)
+        {
+            winnerText = "Right Player Wins!";
+        }
+        if (ball.x > GetScreenWidth())
+        {
+            winnerText = "Left Player Wins!";
+        }
+        if (winnerText && IsKeyPressed(KEY_SPACE))
+        {
+            ball.x = GetScreenWidth() / 2;
+            ball.y = GetScreenHeight() / 2;
+            ball.speedX = 300;
+            ball.speedY = 300;
+            winnerText = nullptr;
+        }
+
         BeginDrawing();
             ClearBackground(BLACK); 
             
             ball.Draw();
             leftPaddle.Draw();
             rightPaddle.Draw();
+
+            if (winnerText)
+            {
+                int textWidth = MeasureText(winnerText, 60);
+                DrawText(winnerText,
+                         (GetScreenWidth() / 2) - (textWidth / 2),
+                         (GetScreenHeight() / 2) - 30,
+                         60,
+                         YELLOW
+                );
+            }
 
             DrawFPS(10, 10);
         EndDrawing();
@@ -95,3 +180,4 @@ int main(){
     CloseWindow();
     return 0;
 }
+
